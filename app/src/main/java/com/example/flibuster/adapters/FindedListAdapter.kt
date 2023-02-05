@@ -1,7 +1,6 @@
 package com.example.flibuster.adapters
 
 import android.app.Activity
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,8 +31,21 @@ class FindedListAdapter(private val dataSet: MutableList<Map<String, String>>, p
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         dataSet[position].forEach{
             viewHolder.bookName.text = it.key
+
             viewHolder.itemView.findViewById<Button>(R.id.fb_download).setOnClickListener{ currentView ->
-                api.downloadFb2(it.value, activity)
+                api.downloadFb2(it.value, activity, "fb2")
+            }
+
+            viewHolder.itemView.findViewById<Button>(R.id.mobi_download).setOnClickListener{ currentView ->
+                api.downloadFb2(it.value, activity, "mobi")
+            }
+
+            viewHolder.itemView.findViewById<Button>(R.id.epub_download).setOnClickListener{ currentView ->
+                api.downloadFb2(it.value, activity, "epub")
+            }
+
+            viewHolder.itemView.findViewById<Button>(R.id.pdf_download).setOnClickListener{ currentView ->
+                api.downloadFb2(it.value, activity, "pdf")
             }
         }
     }

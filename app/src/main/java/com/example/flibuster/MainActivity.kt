@@ -30,7 +30,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var recyclerView: RecyclerView
 
     @RequiresApi(Build.VERSION_CODES.R)
-    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -82,8 +81,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
     }
-
-    //"Вы призвали не того"
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun findBook(book: String) {

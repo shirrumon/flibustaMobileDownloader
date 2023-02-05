@@ -7,17 +7,35 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import okhttp3.*
-import okio.BufferedSink
-import okio.buffer
-import okio.sink
 import org.jsoup.Jsoup
 import java.io.*
+import java.util.concurrent.TimeUnit
 
 class FlibustaFetch {
     private val baseUrl = "https://flibusta.site"
-    private val client = OkHttpClient()
-    private val pathToDownloads =
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+    private val okhttpBuilder = OkHttpClient
+        .Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(300, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+//        .addNetworkInterceptor { chain ->
+//            val originalResponse = chain.proceed(chain.request())
+//            val originalBody = originalResponse.body
+//            originalBody.let {
+//                originalResponse.newBuilder()
+//                    .body(it?.let { it1 ->
+//                        SpeedTestDownloadResponseBody(
+//                            responseBody = it1,
+//                            speedTestListener = SpeedTestListener,
+//                            startTimeMillis = TimeBenchmark().build(),
+//                            timeBenchmark = TimeBenchmark(),
+//                            reportInterval = reportInterval
+//                        )
+//                    })
+//                    .build()
+//            }
+//        }
+    private val client = okhttpBuilder.build()
 
     fun findBook(bookName: String): MutableList<Map<String, String>> {
         val result = mutableListOf<Map<String, String>>()
@@ -27,7 +45,7 @@ class FlibustaFetch {
                 "\\s".toRegex(),
                 "+"
             )
-        ).get()    // <1>
+        ).get()
         doc.select("div#main").select("li").select("a")
             .forEach {
                 if (it.attr("href").contains("/b/", ignoreCase = true)) {
@@ -40,24 +58,33 @@ class FlibustaFetch {
         return result
     }
 
-    fun downloadFb2(bookId: String, activity: Activity) {
+    fun downloadFb2(bookId: String, activity: Activity, extension: String) {
         val request = Request.Builder()
-            .url(baseUrl + bookId + "/fb2")
+            .url("$baseUrl$bookId/$extension")
             .build()
 
-        Log.d("target url", baseUrl + bookId + "/fb2")
-
+        Log.d("Current url", "$baseUrl$bookId/$extension")
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 e.printStackTrace()
             }
 
+            @RequiresApi(Build.VERSION_CODES.Q)
             override fun onResponse(call: Call, response: Response) {
+                val actualExtension = when(extension) {
+                    "fb2" -> "fb2.zip"
+                    "mobi" -> "fb2.mobi"
+                    "epub" -> "fb2.epub"
+                    else -> {
+                        "pdf"
+                    }
+                }
+
                 response.use {
                     if (!response.isSuccessful) throw IOException("Unexpected code $response")
                     writeFile(
                         bookId.filter { it.isDigit() },
-                        "fb2.zip",
+                        actualExtension,
                         activity,
                         response.body!!
                     )
@@ -88,14 +115,10 @@ class FlibustaFetch {
                     .toString()
             )
         } else {
-            File(Environment.getExternalStorageDirectory().toString() + "/Books" )
+            File(Environment.getExternalStorageDirectory().toString() + "/Books")
         }
 
-        // Make sure the path directory exists.
-
-        // Make sure the path directory exists.
         if (!dir.exists()) {
-            // Make it, if it doesn't exit
             val success = dir.mkdirs()
             if (!success) {
                 dir = null
@@ -112,7 +135,7 @@ class FlibustaFetch {
 
             do {
                 val read = inputStream.read(fileReader)
-                if(read != -1) {
+                if (read != -1) {
                     fos.write(fileReader, 0, read)
                     sizeOfDownloaded += read
                 }
@@ -121,11 +144,7 @@ class FlibustaFetch {
             fos.flush()
             fos.close()
 
-            //FileProvider.getUriForFile(activity, "com.example.fileprovider", downloadedFile)
-
-//            val sink: BufferedSink = downloadedFile.sink().buffer()
-//            sink.writeAll(body.source())
-//            sink.close()
+            FileProvider.getUriForFile(activity, "com.example.fileprovider", dir)
         }
     }
 }
