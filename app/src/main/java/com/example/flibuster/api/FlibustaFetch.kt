@@ -6,35 +6,28 @@ import android.os.Environment
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
+import com.example.flibuster.api.downloadHandler.DownloadSpeedCounter
 import okhttp3.*
 import org.jsoup.Jsoup
 import java.io.*
 import java.util.concurrent.TimeUnit
 
-class FlibustaFetch {
+class FlibustaFetch(activity: Activity) {
     private val baseUrl = "https://flibusta.site"
     private val okhttpBuilder = OkHttpClient
         .Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(300, TimeUnit.SECONDS)
+        .readTimeout(2800, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
-//        .addNetworkInterceptor { chain ->
-//            val originalResponse = chain.proceed(chain.request())
-//            val originalBody = originalResponse.body
-//            originalBody.let {
-//                originalResponse.newBuilder()
-//                    .body(it?.let { it1 ->
-//                        SpeedTestDownloadResponseBody(
-//                            responseBody = it1,
-//                            speedTestListener = SpeedTestListener,
-//                            startTimeMillis = TimeBenchmark().build(),
-//                            timeBenchmark = TimeBenchmark(),
-//                            reportInterval = reportInterval
-//                        )
-//                    })
-//                    .build()
-//            }
-//        }
+        .addNetworkInterceptor { chain ->
+            val originalResponse = chain.proceed(chain.request())
+            val originalBody = originalResponse.body
+            originalBody!!.let { response ->
+                originalResponse.newBuilder()
+                    .body(DownloadSpeedCounter(response, activity))
+                    .build()
+            }
+        }
     private val client = okhttpBuilder.build()
 
     fun findBook(bookName: String): MutableList<Map<String, String>> {
@@ -144,7 +137,7 @@ class FlibustaFetch {
             fos.flush()
             fos.close()
 
-            FileProvider.getUriForFile(activity, "com.example.fileprovider", dir)
+            //FileProvider.getUriForFile(activity, "com.example.fileprovider", dir)
         }
     }
 }

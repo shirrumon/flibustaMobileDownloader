@@ -27,7 +27,7 @@ class FindedListAdapter(private val dataSet: MutableList<Map<String, String>>, p
         return ViewHolder(view)
     }
 
-    val api = FlibustaFetch()
+    val api = FlibustaFetch(activity)
     override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         dataSet[position].forEach{
             viewHolder.bookName.text = it.key
